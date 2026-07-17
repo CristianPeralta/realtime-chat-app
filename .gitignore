@@ -65,3 +65,9 @@ public
 
 # data
 /data
+
+# graphify generated output (regenerate with `graphify update .`)
+graphify-out/
+
+# agent teams lite skill-registry cache
+.atl/
