@@ -540,15 +540,17 @@ Vue.use(VueSocketio, window.location.origin)
         ChatServices.user().then((response) => {
           this.user = response.data;
           this.solicitudes = this.user.solicitudes;
-          if (this.user.username) {
+          if (this.user && this.user.username) {
             this.$socket.emit('userConnected', {
               user: this.user,
               room: this.room.slug
             });
           }
-          this.$socket.emit('getFriends', {
-            _id:this.user._id
-          });
+          if (this.user && this.user._id) {
+            this.$socket.emit('getFriends', {
+              _id: this.user._id
+            });
+          }
           cb();
         });
       },

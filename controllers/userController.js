@@ -164,6 +164,9 @@ module.exports.getFriends = function (req,res) {
 
 
 module.exports.getFriendsSocket = function (data, cb) {
+  if (!data || !data._id) {
+    return cb([], null);
+  }
   User.findOne({_id:data._id}).populate({
     path: 'friends',
     populate: {path: 'friends'}
@@ -173,8 +176,11 @@ module.exports.getFriendsSocket = function (data, cb) {
       {path: 'from'},
       {path: 'to'}
     ],
-  }).then((user, err) => {
-    return cb(user.friends, err);
+  }).then((user) => {
+    return cb((user && user.friends) || [], null);
+  }).catch((err) => {
+    console.error(err);
+    return cb([], err);
   })
 }
 

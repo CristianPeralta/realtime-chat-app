@@ -207,6 +207,9 @@ function isOnline(data, cb) {
 
 function friendsOnline(friends, cb) {
   let friendsOn = [];
+  if (!Array.isArray(friends)) {
+    return cb(friendsOn);
+  }
   console.log('function friends');
   let ids = friends.map((friend) => {
     return friend._id;
