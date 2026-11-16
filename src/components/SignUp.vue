@@ -83,26 +83,36 @@ export default {
   },
   methods: {
     processFile (e) {
-      this.photo = e.target.files[0];
-      this.preview = URL.createObjectURL(e.target.files[0]);
+      const file = e.target.files && e.target.files[0];
+      if (!file) {
+        return;
+      }
+      // Keep the File off Vue's observed data. A plain object has no filename
+      // and formidable then never puts it in files.photo.
+      this._photo = file;
+      this.preview = URL.createObjectURL(file);
     },
     sendForm () {
-      if (this.password === this.confirmPassword) {
-
-        let form = new FormData();
-        form.append('username', this.username);
-        form.append('email', this.email);
-        form.append('password', this.password);
-        form.append('photo', this.photo);
-        form.append('gender', this.gender);
-
-        ChatServices.signup(form).then((response) => {
-              let user = response.data;
-              this.$router.push({ name: 'Room', params: {initialRoom: 'home'}})
-            })
-      } else{
+      if (this.password !== this.confirmPassword) {
         alert('Password doesnt match');
+        return;
       }
+      if (!this._photo) {
+        alert('Choose a photo');
+        return;
+      }
+
+      let form = new FormData();
+      form.append('username', this.username);
+      form.append('email', this.email);
+      form.append('password', this.password);
+      form.append('photo', this._photo, this._photo.name);
+      form.append('gender', this.gender);
+
+      ChatServices.signup(form).then((response) => {
+        let user = response.data;
+        this.$router.push({ name: 'Room', params: {initialRoom: 'home'}})
+      })
     }
   }
 }

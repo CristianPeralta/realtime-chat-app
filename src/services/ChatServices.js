@@ -5,12 +5,7 @@ export default {
     return Api().get('room/'+ params);
   },
   signup (params) {
-    return Api().post('signup', params, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }
-    )
+    return Api().post('signup', params)
   },
   login (params) {
     return Api().post('login', params);

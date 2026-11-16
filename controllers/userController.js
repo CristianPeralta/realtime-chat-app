@@ -241,27 +241,38 @@ module.exports.logout= function (req,res) {
 module.exports.create = function (req,res) {
   let form = new formidable.IncomingForm();
   form.parse(req, function(err, fields, files) {
+    if (err) {
+      console.error(err);
+      return res.sendStatus(400);
+    }
     let data = fields;
-        var user = new User();
+    var user = new User();
+    var photo = files && files.photo;
+    if (Array.isArray(photo)) {
+      photo = photo[0];
+    }
+    if (!photo || !photo.name) {
+      return res.status(400).json({ error: 'photo is required' });
+    }
 
-        data.photo = path.join("uploads/", files.photo.name);
-        console.log(data);
+    data.photo = path.join("uploads/", photo.name);
+    console.log(data);
 
-        user.username = data.username;
-        user.email = data.email;
-        user.photo = data.photo;
-        user.gender = data.gender;
-        user.password = bcrypt.hashSync(data.password, 10);
+    user.username = data.username;
+    user.email = data.email;
+    user.photo = data.photo;
+    user.gender = data.gender;
+    user.password = bcrypt.hashSync(data.password, 10);
 
-        user.save(function (err,user) {
-            if(err){
-              console.log(err);
-              return res.sendStatus(503)
-            }
-            req.session.user = user;
-            let currentUser = req.session.user;
-            return res.json(currentUser);
-        });
+    user.save(function (err,user) {
+        if(err){
+          console.log(err);
+          return res.sendStatus(503)
+        }
+        req.session.user = user;
+        let currentUser = req.session.user;
+        return res.json(currentUser);
+    });
 
   });
   form.on("error", function(err) {
@@ -271,11 +282,14 @@ module.exports.create = function (req,res) {
   form.on("fileBegin", function(name, file) {
     let rdName = randomstring.generate();
     rdName = rdName.replace("/", "");
-    let originalName = file.name;
+    let originalName = file.name || '';
     file.name = rdName + path.extname(originalName);
   });
 
   form.on("end", function(fields, files) {
+    if (!this.openedFiles || !this.openedFiles[0]) {
+      return;
+    }
     const temp_path = this.openedFiles[0].path;
     const file_name = this.openedFiles[0].name;
     const new_location = path.join(__dirname, "../public/uploads/", file_name);
