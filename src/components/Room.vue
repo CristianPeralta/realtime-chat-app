@@ -140,7 +140,7 @@ import Message from '@/components/Message'
 import Inbox from '@/components/Inbox'
 import ChatServices from '@/services/ChatServices'
 
-Vue.use(VueSocketio, 'ws://localhost:3000')
+Vue.use(VueSocketio, window.location.origin)
 
   export default {
     name: 'Room',
