@@ -77,33 +77,16 @@ docker run -p 3000:3000 --network host messages-app
 Note: Using the --network host flag allows the container to consume the database from the host machine. If this is not available, consider using Docker Compose as described below.
 
 ### 6.4 Running with Docker Compose
-If you prefer to use Docker Compose, follow these steps:
 
-Grant necessary permissions to the data directory for persistent storage:
-
-```bash
-sudo chmod -R 777 /data/db
-```
-Uncomment line 6 and comment line 4 in the .env file:
-
-```bash
-4. MONGODB_CONNECTION_STRING=mongodb://localhost/messageDb
-5. # For docker compose
-6. # MONGODB_CONNECTION_STRING=mongodb://mongodb/messageDb
-```
-(Optional) If you encounter permission issues or need to customize the UID and GID, uncomment lines 7 and 8 in the .env file:
-
-```bash
-7. # UID=1000
-8. # GID=1000
-```
-Ensure that port '27017:27017' is available on your system or modify the port in line 6 of the docker-compose.yml file.
-
-To run the Messages application with Docker Compose, execute the following command:
+Compose is the one-command boot. The host does not need Node 18.18.2 or a local MongoDB. From a clean clone:
 
 ```bash
 docker compose up
 ```
+
+That starts MongoDB 6.0.4 and the app image (`node:18.18.2-alpine3.18`). The app listens on port 3000 and connects to Mongo on the compose network. The connection string is set in `docker-compose.yml`; do not edit `.env` for this path. Database files live in the `mongo-data` volume, so no host directory permissions are required.
+
+Port 3000 must be free on the host. MongoDB is not published to the host.
 
 ## 7. Author
 [Cristian Peralta](https://github.com/CristianPeralta)
