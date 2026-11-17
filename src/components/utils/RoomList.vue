@@ -13,7 +13,7 @@
         New Room
       </p>
       <ul class="menu-list">
-        <input class="input" type="text" v-model="newRoom" placeholder="New Room" maxlength="40">
+        <input class="input" type="text" v-model="newRoom" placeholder="New Room">
         <button @click="sendForm()" class="button is-block is-info is-fullwidth">Add</button>
         <p v-if="error" class="help is-danger">{{ error }}</p>
       </ul>
@@ -41,6 +41,11 @@ export default {
   methods: {
     sendForm () {
       this.error = '';
+      var name = (this.newRoom || '').trim();
+      if (name.length > 40) {
+        this.error = 'Room names must be 1 to 40 characters';
+        return;
+      }
       ChatServices.addRoom({
         name: this.newRoom
       }).then((response) => {
