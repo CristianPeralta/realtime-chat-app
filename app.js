@@ -64,6 +64,10 @@ db.once('open', function () {
 io.on('connection', function (socket) {
   console.log('A client has connected');
   console.log(socket.id);
+  var connectedUser = actingUser(socket);
+  if (connectedUser) {
+    socket.join('user:' + String(connectedUser._id));
+  }
   socket.on('userConnected', (data) => {
     data.id = socket.id;
     console.log('user conneasd');
@@ -189,8 +193,13 @@ io.on('connection', function (socket) {
     messageController.createSocket(payload, (message, err) => {
       console.log('message created');
       console.log(message);
-      io.to(data.to.id).emit('addMessagePrivated', { data: message, ok: !err, err: err });
-      io.to(socket.id).emit('addMessagePrivated', { data: message, ok: !err, err: err });
+      var recipientId = data && data.to && data.to.user && data.to.user._id;
+      if (recipientId) {
+        io.to('user:' + String(recipientId)).emit('addMessagePrivated', { data: message, ok: !err, err: err });
+      }
+      if (!recipientId || String(recipientId) !== String(actor._id)) {
+        io.to(socket.id).emit('addMessagePrivated', { data: message, ok: !err, err: err });
+      }
     })
   });
 
