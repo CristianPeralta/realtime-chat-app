@@ -1,4 +1,6 @@
 var express = require('express');
+var fs = require('fs');
+var path = require('path');
 var router = express.Router();
 var userController = require('../controllers/userController');
 var messageController = require('../controllers/messageController');
@@ -14,7 +16,12 @@ function requireSession(req, res, next) {
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
-  res.render('index');
+  var assetVersion = Date.now();
+  try {
+    assetVersion = fs.statSync(path.join(__dirname, '../public/js/app.js')).mtimeMs;
+  } catch (err) {}
+  res.set('Cache-Control', 'no-cache');
+  res.render('index', { assetVersion: assetVersion });
 });
 
 router.get('/room/delete', requireSession, roomController.delete);

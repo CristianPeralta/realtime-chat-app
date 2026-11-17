@@ -338,6 +338,10 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use('/js', function (req, res, next) {
+  res.set('Cache-Control', 'no-cache');
+  next();
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', index);
