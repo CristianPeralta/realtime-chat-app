@@ -8,37 +8,63 @@ const randomstring = require("randomstring");
 var User = require('../models/User');
 
 
-module.exports.login = function (req,res) {
-  let data = req.body;
-  console.log(data);
-  User.findOne({email:data.email}).then((user, err) => {
-    if(err){
-      console.log(err);
-      return res.sendStatus(503)
+function stripPassword(value) {
+  if (Array.isArray(value)) {
+    return value.map(stripPassword);
+  }
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+  if (value._bsontype === 'ObjectID' || value._bsontype === 'ObjectId') {
+    return String(value);
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  const source = typeof value.toObject === 'function' ? value.toObject() : value;
+  const copy = {};
+  Object.keys(source).forEach((key) => {
+    if (key === 'password') {
+      return;
     }
-    console.log('Logged');
-    if (bcrypt.compareSync(data.password, user.password)) {
-      User.findOne({_id:user._id}).populate({
-        path: 'friends',
-        populate: {path: 'friends'}
-      }).populate({
-        path: 'solicitudes',
-        populate: [
-          {path: 'from'},
-          {path: 'to'}
-        ],
-      }).then((user, err) => {
-        if(err){
-          console.log(err);
-          return res.sendStatus(503)
-        }
-        req.session.user = user;
-        let currentUser = req.session.user;
-        return res.json(currentUser);
-      })
-    }
+    copy[key] = stripPassword(source[key]);
+  });
+  return copy;
+}
 
-  })
+function publicUser(user) {
+  return stripPassword(user);
+}
+
+module.exports.login = function (req,res) {
+  let data = req.body || {};
+  User.findOne({email:data.email}).then((user) => {
+    if (!user || !data.password || !bcrypt.compareSync(data.password, user.password)) {
+      return res.sendStatus(401);
+    }
+    return User.findOne({_id:user._id}).populate({
+      path: 'friends',
+      populate: {path: 'friends'}
+    }).populate({
+      path: 'solicitudes',
+      populate: [
+        {path: 'from'},
+        {path: 'to'}
+      ],
+    }).then((full) => {
+      if (!full) {
+        return res.sendStatus(401);
+      }
+      let currentUser = publicUser(full);
+      req.session.user = currentUser;
+      return res.json(currentUser);
+    });
+  }).catch((err) => {
+    console.error(err);
+    if (!res.headersSent) {
+      return res.sendStatus(503);
+    }
+  });
 }
 
 module.exports.addFriend = function (req,res) {
@@ -186,9 +212,7 @@ module.exports.getFriendsSocket = function (data, cb) {
 
 module.exports.getUser = function (req,res) {
     let user = req.session.user;
-    console.log('usuariasb');
-    console.log(req.session.user);
-    if (user) {
+    if (user && user._id) {
       User.findOne({_id:user._id}).populate({
         path: 'friends',
         populate: {path: 'friends'}
@@ -198,13 +222,15 @@ module.exports.getUser = function (req,res) {
           {path: 'from'},
           {path: 'to'}
         ],
-      }).then((user, err) => {
-        if (err) {
-          console.log(err);
-          return res.sendStatus(503);
+      }).then((found) => {
+        if (!found) {
+          return res.json({});
         }
-        return res.json(user);
-      })
+        return res.json(publicUser(found));
+      }).catch((err) => {
+        console.error(err);
+        return res.sendStatus(401);
+      });
     } else {
       return res.json({});
     }
