@@ -10,7 +10,7 @@
 
 		<div ref="chat" class="chat">
 
-			<div class="chat-history">
+			<div ref="history" class="chat-history">
 				<slot></slot>
 			</div>
 
@@ -39,6 +39,12 @@ export default {
   },
   props: ['user'],
   methods: {
+    scrollToLatest () {
+      const history = this.$refs.history;
+      if (history) {
+        history.scrollTop = history.scrollHeight;
+      }
+    },
     addMessage () {
       this.$parent.$socket.emit('addMessagePrivated', {
         to: this.user,

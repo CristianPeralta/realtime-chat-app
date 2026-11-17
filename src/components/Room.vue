@@ -6,7 +6,7 @@
         <RoomList>
         </RoomList>
         <div class="column is-7" >
-          <button @click="chatPosition()" class="button is-primary">Write</button>
+          <button @click="chatPosition(true)" class="button is-primary">Write</button>
           <div ref="chatbox" class="box content" style="overflow-y: scroll; height:530px; z-index:80;">
             <template v-for="(message,index) in messages">
               <Message :user="message.user" :from="message.createdAt">
@@ -117,7 +117,7 @@
         </div>
       </div>
     </section>
-    <Inbox v-if="inboxs.length!=0" v-for="(inbox, index) in inboxs" :user="inbox" :key="inboxKey(inbox, index)">
+    <Inbox ref="inboxes" v-if="inboxs.length!=0" v-for="(inbox, index) in inboxs" :user="inbox" :key="inboxKey(inbox, index)">
       <template v-for="(mprivate,index) in messageprivated">
         <Message :user="mprivate.user">
           {{mprivate.text}}
@@ -212,8 +212,8 @@ Vue.use(VueSocketio, window.location.origin)
       messageAdded (response) {
         if (response.ok) {
           this.messages.push(response.data);
-
           this.clear();
+          this.$nextTick(this.chatPosition);
         } else {
           console.log(response.err);
         }
@@ -255,6 +255,7 @@ Vue.use(VueSocketio, window.location.origin)
           this.messageprivated.push(response.data);
           this.textprivated = '';
           this.openInboxForIncoming(response.data);
+          this.scrollOpenInboxes();
         } else {
           console.log(response.err);
         }
@@ -435,12 +436,28 @@ Vue.use(VueSocketio, window.location.origin)
           this.$router.push({name: 'Login'});
         }
       },
-      chatPosition () {
-        if (this.isLoad == true) {
+      chatPosition (focus) {
+        this.$nextTick(() => {
           let chat = this.$refs.chatbox;
+          if (!chat) {
+            return;
+          }
           chat.scrollTop = chat.scrollHeight;
-          this.$refs.chatmessage.focus();
-        }
+          if (focus && this.$refs.chatmessage) {
+            this.$refs.chatmessage.focus();
+          }
+        });
+      },
+      scrollOpenInboxes () {
+        this.$nextTick(() => {
+          const boxes = this.$refs.inboxes;
+          const list = Array.isArray(boxes) ? boxes : (boxes ? [boxes] : []);
+          list.forEach((inbox) => {
+            if (inbox && inbox.scrollToLatest) {
+              inbox.scrollToLatest();
+            }
+          });
+        });
       },
       clear () {
         this.text = '';
