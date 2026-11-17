@@ -117,7 +117,7 @@
         </div>
       </div>
     </section>
-    <Inbox v-if="inboxs.length!=0" v-for="(inbox, index) in inboxs" :user="inbox" :key="index">
+    <Inbox v-if="inboxs.length!=0" v-for="(inbox, index) in inboxs" :user="inbox" :key="inboxKey(inbox, index)">
       <template v-for="(mprivate,index) in messageprivated">
         <Message :user="mprivate.user">
           {{mprivate.text}}
@@ -254,6 +254,7 @@ Vue.use(VueSocketio, window.location.origin)
         if (response.ok) {
           this.messageprivated.push(response.data);
           this.textprivated = '';
+          this.openInboxForIncoming(response.data);
         } else {
           console.log(response.err);
         }
@@ -445,6 +446,34 @@ Vue.use(VueSocketio, window.location.origin)
         this.text = '';
       },
 
+      inboxKey (inbox, index) {
+        const id = inbox.user && (inbox.user._id || inbox.user);
+        return String(id || index) + '-' + (inbox.reveal || 0);
+      },
+      openInboxForIncoming (message) {
+        const sender = message && message.user;
+        const senderId = sender && (sender._id || sender);
+        if (!senderId || !this.user || String(senderId) === String(this.user._id)) {
+          return;
+        }
+        const index = this.inboxs.findIndex((inbox) => {
+          const id = inbox.user && (inbox.user._id || inbox.user);
+          return String(id) === String(senderId);
+        });
+        if (index === -1) {
+          this.inboxs.push({
+            user: typeof sender === 'object' ? sender : { _id: senderId },
+            room: this.room && this.room.slug,
+            id: undefined,
+            reveal: 1
+          });
+          return;
+        }
+        const current = this.inboxs[index];
+        this.$set(this.inboxs, index, Object.assign({}, current, {
+          reveal: (current.reveal || 0) + 1
+        }));
+      },
       addPrivateUser (to) {
         this.inboxs.push(to);
         this.getHistorial(this.user._id, to.user._id);
