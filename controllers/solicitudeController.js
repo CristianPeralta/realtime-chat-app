@@ -188,8 +188,11 @@ module.exports.acceptSolicitude = function (req,res) {
 
 module.exports.acceptSocket = function (data, cb) {
   Solicitude.findOne({_id:data.id}).populate('from').populate('to').then( (solicitude, err) => {
-      if (err) {
-        console.log(err);
+      if (err || !solicitude) {
+        return cb(null, null, err || new Error('not found'));
+      }
+      if (!data || !data.actorId || String(solicitude.to && solicitude.to._id) !== String(data.actorId)) {
+        return cb(null, null, new Error('forbidden'));
       }
       solicitude.status = 'Accept';
       solicitude.save(function (err, solicitude) {

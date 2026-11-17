@@ -22,6 +22,32 @@ var userController = require('./controllers/userController');
 
 var usersOnline = [];
 
+var sessionMiddleware = session({
+  // When there is nothing on the session, do not save it
+  saveUninitialized: false,
+  // Update session if it changes
+  resave: true,
+  // Set cookie
+  cookie: {
+    secure: false,
+    maxAge: 365 * 24 * 60 * 60 * 1000
+  },
+  // Name of your cookie
+  name: 'testCookie',
+  // Secret of your cookie
+  secret: process.env.SESSION_SECRET
+});
+
+io.use(function (socket, next) {
+  var req = socket.request;
+  if (!req || !req.res) {
+    return next();
+  }
+  sessionMiddleware(req, req.res, function () {
+    next();
+  });
+});
+
 var index = require('./routes/index');
 console.log(process.env.MONGODB_CONNECTION_STRING);
 mongoose.connect(process.env.MONGODB_CONNECTION_STRING, {
@@ -70,7 +96,13 @@ io.on('connection', function (socket) {
   });
 
   socket.on('addSolicitude', (data) => {
-    solicitudeController.createSocket(data, (solicitude, err) => {
+    var actor = actingUser(socket);
+    if (!actor) {
+      return;
+    }
+    var payload = payloadFrom(data);
+    payload.user = { _id: String(actor._id) };
+    solicitudeController.createSocket(payload, (solicitude, err) => {
       console.log('adding');
       console.log(data.friend.id);
       io.to(data.friend.id).emit('solicitudeAdded', { data: solicitude, ok: !err, err: err });
@@ -85,10 +117,21 @@ io.on('connection', function (socket) {
   });
 
   socket.on('acceptSolicitude', (data) => {
-    solicitudeController.acceptSocket(data, (user, friend, err) => {
+    var actor = actingUser(socket);
+    if (!actor) {
+      return;
+    }
+    var payload = payloadFrom(data);
+    delete payload.user;
+    delete payload.to;
+    payload.actorId = String(actor._id);
+    solicitudeController.acceptSocket(payload, (user, friend, err) => {
       console.log('¿friend');
       console.log(friend);
       io.to(socket.id).emit('solicitudeAccepted', { data: user, ok: !err, err: err });
+      if (!friend || !friend._id) {
+        return;
+      }
       isOnline(friend._id, (el) => {
         if (el) {
           console.log('goo job');
@@ -119,7 +162,13 @@ io.on('connection', function (socket) {
   });
 
   socket.on('addMessage', (data) => {
-    messageController.createSocket(data, (message, err) => {
+    var actor = actingUser(socket);
+    if (!actor) {
+      return;
+    }
+    var payload = payloadFrom(data);
+    payload.user = String(actor._id);
+    messageController.createSocket(payload, (message, err) => {
       console.log('new message');
       io.emit('messageAdded', { data: message, ok: !err, err: err });
     })
@@ -127,7 +176,13 @@ io.on('connection', function (socket) {
 
   socket.on('addMessagePrivated', (data) => {
     console.log('message privated');
-    messageController.createSocket(data, (message, err) => {
+    var actor = actingUser(socket);
+    if (!actor) {
+      return;
+    }
+    var payload = payloadFrom(data);
+    payload.user = String(actor._id);
+    messageController.createSocket(payload, (message, err) => {
       console.log('message created');
       console.log(message);
       io.to(data.to.id).emit('addMessagePrivated', { data: message, ok: !err, err: err });
@@ -178,6 +233,21 @@ io.on('connection', function (socket) {
 //   console.log(usersRoom);
 //   cb(usersRoom);
 // }
+
+function actingUser(socket) {
+  var sess = socket.request && socket.request.session;
+  if (!sess || !sess.user || !sess.user._id) {
+    return null;
+  }
+  return sess.user;
+}
+
+function payloadFrom(data) {
+  if (!data || typeof data !== 'object') {
+    return {};
+  }
+  return Object.assign({}, data);
+}
 
 function addUserinRoom(data, cb) {
   if (data.user != null) {
@@ -243,21 +313,7 @@ function getUserById(id, cb) {
     }
   }
 }
-app.use(session({
-  // When there is nothing on the session, do not save it
-  saveUninitialized: false,
-  // Update session if it changes
-  resave: true,
-  // Set cookie
-  cookie: {
-    secure: false,
-    maxAge: 365 * 24 * 60 * 60 * 1000
-  },
-  // Name of your cookie
-  name: 'testCookie',
-  // Secret of your cookie
-  secret: process.env.SESSION_SECRET
-}));
+app.use(sessionMiddleware);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
