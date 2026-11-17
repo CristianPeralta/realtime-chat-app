@@ -21,7 +21,7 @@
 
 
             <Message :user="user">
-              <textarea ref="chatmessage" v-model="text" class="textarea is-large" type="text" placeholder="Your message" autofocus=""></textarea>
+              <textarea ref="chatmessage" v-model="text" class="textarea is-large" type="text" placeholder="Your message" autofocus="" @keydown.enter.exact.prevent="addMessageSocket()"></textarea>
               <div class="control">
                 <button @click="addMessageSocket()" class="button is-primary">Submit</button>
                 <div class="field">

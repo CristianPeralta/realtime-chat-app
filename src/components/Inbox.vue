@@ -41,7 +41,7 @@
 
 				<fieldset>
 
-					<input type="text" placeholder="Type your message…" v-model="text" autofocus>
+					<input type="text" placeholder="Type your message…" v-model="text" autofocus @keydown.enter.prevent="addMessage">
 					<input type="hidden">
 					<button type="button" @click="addMessage" name="button">Send</button>
 				</fieldset>
