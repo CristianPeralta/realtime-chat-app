@@ -37,7 +37,20 @@ export default {
       text: ''
     }
   },
-  props: ['user'],
+  props: ['user', 'draft'],
+  created () {
+    this.text = this.draft || '';
+  },
+  watch: {
+    text (value) {
+      this.$emit('draft', value);
+    },
+    draft (value) {
+      if (value !== this.text) {
+        this.text = value || '';
+      }
+    }
+  },
   methods: {
     scrollToLatest () {
       const history = this.$refs.history;

@@ -117,7 +117,7 @@
         </div>
       </div>
     </section>
-    <Inbox ref="inboxes" v-if="inboxs.length!=0" v-for="(inbox, index) in inboxs" :user="inbox" :key="inboxKey(inbox, index)">
+    <Inbox ref="inboxes" v-if="inboxs.length!=0" v-for="(inbox, index) in inboxs" :user="inbox" :draft="draftFor(inbox)" :key="inboxKey(inbox, index)" @draft="setDmDraft(inbox, $event)">
       <template v-for="(mprivate,index) in messageprivated">
         <Message :user="mprivate.user">
           {{mprivate.text}}
@@ -158,6 +158,8 @@ Vue.use(VueSocketio, window.location.origin)
         solicitudes: [],
         photo: {},
         inboxs:[],
+        dmDrafts: {},
+        uiReady: false,
         friends: [],
         friendsOffline: [],
         menu: {
@@ -292,7 +294,10 @@ Vue.use(VueSocketio, window.location.origin)
       this.getMessagesSocket();
     },
     mounted() {
-      this.saveRoom(this.getMessagesSocket, this.getUser, this.checkUser);
+      this.saveRoom(this.getMessagesSocket, this.getUser, () => {
+        this.checkUser();
+        this.restoreChatUi();
+      });
     },
     filters: {
       count (users) {
@@ -300,6 +305,21 @@ Vue.use(VueSocketio, window.location.origin)
       }
     },
     watch: {
+      text () {
+        this.persistChatUi();
+      },
+      inboxs: {
+        handler () {
+          this.persistChatUi();
+        },
+        deep: true
+      },
+      dmDrafts: {
+        handler () {
+          this.persistChatUi();
+        },
+        deep: true
+      },
       initialRoom () {
         this.saveRoom(this.getMessagesSocket, this.getUser, this.checkUser);
       },
@@ -463,6 +483,67 @@ Vue.use(VueSocketio, window.location.origin)
         this.text = '';
       },
 
+      chatUiKey () {
+        return 'chat-ui:' + (this.user && this.user._id);
+      },
+      readChatUi () {
+        try {
+          return JSON.parse(sessionStorage.getItem(this.chatUiKey())) || {};
+        } catch (err) {
+          return {};
+        }
+      },
+      persistChatUi () {
+        if (!this.uiReady || !this.user || !this.user._id) {
+          return;
+        }
+        const previous = this.readChatUi();
+        const roomDrafts = previous.roomDrafts || {};
+        const slug = this.room && this.room.slug;
+        if (slug) {
+          roomDrafts[slug] = this.text || '';
+        }
+        const inboxes = this.inboxs.map((inbox) => ({
+          user: {
+            _id: inbox.user && inbox.user._id,
+            username: inbox.user && inbox.user.username,
+            photo: inbox.user && inbox.user.photo
+          },
+          room: inbox.room,
+          id: inbox.id
+        })).filter((inbox) => inbox.user._id);
+        sessionStorage.setItem(this.chatUiKey(), JSON.stringify({
+          roomDrafts: roomDrafts,
+          dmDrafts: Object.assign({}, previous.dmDrafts || {}, this.dmDrafts),
+          inboxes: inboxes
+        }));
+      },
+      restoreChatUi () {
+        const saved = this.readChatUi();
+        const slug = this.room && this.room.slug;
+        if (slug && saved.roomDrafts && saved.roomDrafts[slug]) {
+          this.text = saved.roomDrafts[slug];
+        }
+        this.dmDrafts = saved.dmDrafts || {};
+        this.inboxs = (saved.inboxes || []).filter((inbox) => inbox.user && inbox.user._id).map((inbox) => {
+          inbox.reveal = 1;
+          return inbox;
+        });
+        this.$nextTick(() => {
+          this.uiReady = true;
+        });
+      },
+      draftFor (inbox) {
+        const id = inbox.user && inbox.user._id;
+        return (this.dmDrafts && this.dmDrafts[id]) || '';
+      },
+      setDmDraft (inbox, value) {
+        const id = inbox.user && inbox.user._id;
+        if (!id || this.dmDrafts[id] === value) {
+          return;
+        }
+        this.$set(this.dmDrafts, id, value);
+      },
       inboxKey (inbox, index) {
         const id = inbox.user && (inbox.user._id || inbox.user);
         return String(id || index) + '-' + (inbox.reveal || 0);
