@@ -170,7 +170,11 @@ io.on('connection', function (socket) {
     payload.user = String(actor._id);
     messageController.createSocket(payload, (message, err) => {
       console.log('new message');
-      io.emit('messageAdded', { data: message, ok: !err, err: err });
+      var room = (message && message.room) || payload.room;
+      if (!room) {
+        return;
+      }
+      io.to(room).emit('messageAdded', { data: message, ok: !err, err: err });
     })
   });
 
