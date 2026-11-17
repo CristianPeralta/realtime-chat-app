@@ -21,6 +21,7 @@
                   <input class="input is-large" v-model="password" type="password" placeholder="Your Password">
                 </div>
               </div>
+              <p v-if="error" class="help is-danger">{{ error }}</p>
               <button class="button is-block is-info is-large is-fullwidth" @click="login()">Login</button>
           </div>
           <p class="has-text-grey">
@@ -44,7 +45,8 @@ export default {
     return {
       email: '',
       password: '',
-      session: {}
+      session: {},
+      error: ''
     }
   },
   created () {
@@ -57,12 +59,18 @@ export default {
       }
     },
     login () {
+      this.error = '';
       ChatServices.login({
         email: this.email,
         password: this.password
       }).then((response) =>{
         let user = response.data;
         this.$router.push({ name: 'Room', params: {initialRoom: 'home'}})
+      }).catch((err) => {
+        var status = err.response && err.response.status;
+        this.error = status === 401
+          ? 'Email or password is incorrect'
+          : 'Could not sign in';
       })
     },
     getUser (cb) {
