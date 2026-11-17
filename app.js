@@ -359,6 +359,7 @@ app.use(function (err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
-server.listen(3000, function () {
-  console.log('Server running http://localhost:3000');
+var port = process.env.PORT || 3000;
+server.listen(port, function () {
+  console.log('Server running http://localhost:' + port);
 });
