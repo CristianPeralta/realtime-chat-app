@@ -6,6 +6,7 @@ var mongoose = require("mongoose");
 const randomstring = require("randomstring");
 
 var User = require('../models/User');
+var signupError = require('../lib/signupError');
 
 
 function stripPassword(value) {
@@ -297,9 +298,13 @@ module.exports.create = function (req,res) {
     user.password = bcrypt.hashSync(data.password, 10);
 
     user.save(function (err,user) {
-        if(err){
-          console.log(err);
-          return res.sendStatus(503)
+        if (err) {
+          var failure = signupError.signupFailure(err);
+          if (failure.body) {
+            return res.status(failure.status).json(failure.body);
+          }
+          console.error(err);
+          return res.sendStatus(failure.status);
         }
         req.session.user = user;
         let currentUser = req.session.user;

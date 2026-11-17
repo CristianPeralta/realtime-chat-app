@@ -53,6 +53,7 @@
                   </select>
                 </div>
               </div>
+              <p v-if="error" class="help is-danger">{{ error }}</p>
               <button @click="sendForm()" class="button is-block is-info is-large is-fullwidth">Sign Me Up</button>
           </div>
           <p class="has-text-grey">
@@ -78,7 +79,8 @@ export default {
       preview: 'https://image.flaticon.com/icons/svg/179/179948.svg',
       password: '',
       gender: '',
-      confirmPassword: ''
+      confirmPassword: '',
+      error: ''
     }
   },
   methods: {
@@ -109,9 +111,13 @@ export default {
       form.append('photo', this._photo, this._photo.name);
       form.append('gender', this.gender);
 
+      this.error = '';
       ChatServices.signup(form).then((response) => {
         let user = response.data;
         this.$router.push({ name: 'Room', params: {initialRoom: 'home'}})
+      }).catch((err) => {
+        var data = err.response && err.response.data;
+        this.error = (data && data.error) || 'Could not create the account';
       })
     }
   }
