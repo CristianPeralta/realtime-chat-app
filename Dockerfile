@@ -10,5 +10,8 @@ COPY . .
 
 EXPOSE 3000
 
-# Shell form so `&` backgrounds webpack watch. The server stays in the foreground.
-CMD ["sh", "-c", "npm run watch & exec npm run start"]
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Generates SESSION_SECRET when compose does not set one, then starts watch and the server.
+CMD ["docker-entrypoint.sh"]

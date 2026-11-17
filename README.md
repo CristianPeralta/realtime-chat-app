@@ -34,7 +34,7 @@ npm install
 
 ## 4. Configuration
 
-1.  Copy the `.env.example` file as `.env` and configure the necessary environment variables.
+1.  Copy the `.env.example` file as `.env` and configure the necessary environment variables. `SESSION_SECRET` is required. The process exits if it is missing.
 2.  If you want to run tests, also copy the `.env.example` file as `.env.test` and configure the necessary environment variables for testing.
 
 ## 5. Execution
@@ -84,7 +84,7 @@ Compose is the one-command boot. The host does not need Node 18.18.2 or a local 
 docker compose up
 ```
 
-That starts MongoDB 6.0.4 and the app image (`node:18.18.2-alpine3.18`). The app listens on port 3000 and connects to Mongo on the compose network. The connection string is set in `docker-compose.yml`; do not edit `.env` for this path. Database files live in the `mongo-data` volume, so no host directory permissions are required.
+That starts MongoDB 6.0.4 and the app image (`node:18.18.2-alpine3.18`). The app listens on port 3000 and connects to Mongo on the compose network. The connection string is set in `docker-compose.yml`; do not edit `.env` for this path. If `SESSION_SECRET` is unset, compose generates one and keeps it in the `session-secret` volume. Database files live in the `mongo-data` volume, so no host directory permissions are required.
 
 Port 3000 must be free on the host. MongoDB is not published to the host.
 

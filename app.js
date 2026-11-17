@@ -8,6 +8,11 @@ var ejs = require("ejs").__express;
 
 require('dotenv').config()
 
+if (!process.env.SESSION_SECRET) {
+  console.error('SESSION_SECRET is required');
+  process.exit(1);
+}
+
 var app = express();
 var server = require('http').Server(app);
 global.io = require('socket.io')(server);
@@ -251,7 +256,7 @@ app.use(session({
   // Name of your cookie
   name: 'testCookie',
   // Secret of your cookie
-  secret: 'thisIsSecret'
+  secret: process.env.SESSION_SECRET
 }));
 
 // view engine setup
