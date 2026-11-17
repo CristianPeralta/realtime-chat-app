@@ -529,8 +529,32 @@ Vue.use(VueSocketio, window.location.origin)
           inbox.reveal = 1;
           return inbox;
         });
+        this.loadRestoredHistory();
         this.$nextTick(() => {
           this.uiReady = true;
+        });
+      },
+      loadRestoredHistory () {
+        if (!this.user || !this.user._id) {
+          return;
+        }
+        const ids = this.inboxs.map((inbox) => inbox.user && inbox.user._id).filter(Boolean);
+        if (!ids.length) {
+          return;
+        }
+        Promise.all(ids.map((id) => ChatServices.getHistorial(this.user._id, id))).then((responses) => {
+          const seen = {};
+          const messages = [];
+          responses.forEach((response) => {
+            (response.data || []).forEach((message) => {
+              if (message && !seen[message._id]) {
+                seen[message._id] = true;
+                messages.push(message);
+              }
+            });
+          });
+          this.messageprivated = messages;
+          this.scrollOpenInboxes();
         });
       },
       draftFor (inbox) {
