@@ -5,6 +5,19 @@ import Room from '@/components/Room'
 import NewRoom from '@/components/NewRoom'
 import Login from '@/components/Login'
 import SignUp from '@/components/SignUp'
+import ChatServices from '@/services/ChatServices'
+
+function requireSession (to, from, next) {
+  ChatServices.user().then((response) => {
+    if (response.data && response.data.username) {
+      next()
+      return
+    }
+    next({ name: 'Login' })
+  }).catch(() => {
+    next({ name: 'Login' })
+  })
+}
 
 Vue.use(Router)
 export default new Router({
@@ -23,7 +36,8 @@ export default new Router({
       path: '/room/:initialRoom',
       name: 'Room',
       component: Room,
-      props: true
+      props: true,
+      beforeEnter: requireSession
     },
     {
       path: '/newroom/:room',
