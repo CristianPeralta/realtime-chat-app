@@ -1,5 +1,6 @@
 var Room = require('../models/Room');
 var mongoose = require("mongoose");
+var roomName = require('../lib/roomName');
 
 
 module.exports.room = function (req,res) {
@@ -14,19 +15,32 @@ module.exports.room = function (req,res) {
 }
 
 module.exports.create = function (req,res) {
-  let data = req.body;
-  console.log(data);
+  var parsed = roomName.parseRoomName(req.body && req.body.name);
+  if (!parsed.ok) {
+    return res.status(400).json({ error: parsed.error });
+  }
 
-  let room = new Room();
-  room.name = data.name;
-  room.slug = string_to_slug(data.name);
-  room.save(function (err, room) {
-        if(err){
-          console.log(err);
-          return res.sendStatus(503)
+  Room.findOne({ $or: [{ slug: parsed.slug }, { name: parsed.name }] }).then(function (existing) {
+    if (existing) {
+      return res.status(409).json({ error: 'A room with that name already exists' });
+    }
+    var room = new Room();
+    room.name = parsed.name;
+    room.slug = parsed.slug;
+    room.save(function (err, saved) {
+      if (err) {
+        if (err.code === 11000) {
+          return res.status(409).json({ error: 'A room with that name already exists' });
         }
-        return res.json(room);
+        console.error(err);
+        return res.sendStatus(503);
+      }
+      return res.json(saved);
     });
+  }).catch(function (err) {
+    console.error(err);
+    return res.sendStatus(503);
+  });
 }
 
 module.exports.getAll = function (req,res) {
@@ -50,22 +64,4 @@ module.exports.delete = function (req,res) {
       );
       res.json('deleted')
   });
-}
-
-function string_to_slug (str) {
-    str = str.replace(/^\s+|\s+$/g, ''); // trim
-    str = str.toLowerCase();
-
-    // remove accents, swap ñ for n, etc
-    var from = "àáäâèéëêìíïîòóöôùúüûñç·/_,:;";
-    var to   = "aaaaeeeeiiiioooouuuunc------";
-    for (var i=0, l=from.length ; i<l ; i++) {
-        str = str.replace(new RegExp(from.charAt(i), 'g'), to.charAt(i));
-    }
-
-    str = str.replace(/[^a-z0-9 -]/g, '') // remove invalid chars
-        .replace(/\s+/g, '-') // collapse whitespace and replace by -
-        .replace(/-+/g, '-'); // collapse dashes
-
-    return str;
 }

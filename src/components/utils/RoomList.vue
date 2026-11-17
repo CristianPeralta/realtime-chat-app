@@ -13,8 +13,9 @@
         New Room
       </p>
       <ul class="menu-list">
-        <input class="input" type="text" v-model="newRoom" placeholder="New Room">
+        <input class="input" type="text" v-model="newRoom" placeholder="New Room" maxlength="40">
         <button @click="sendForm()" class="button is-block is-info is-fullwidth">Add</button>
+        <p v-if="error" class="help is-danger">{{ error }}</p>
       </ul>
       <slot></slot>
     </aside>
@@ -29,7 +30,8 @@ export default {
   data () {
     return {
       newRoom: '',
-      rooms: []
+      rooms: [],
+      error: ''
     }
   },
   created () {
@@ -38,12 +40,15 @@ export default {
 
   methods: {
     sendForm () {
+      this.error = '';
       ChatServices.addRoom({
         name: this.newRoom
       }).then((response) => {
           this.rooms.push(response.data)
-          console.log(response.data);
           this.newRoom = '';
+      }).catch((err) => {
+          var data = err.response && err.response.data;
+          this.error = (data && data.error) || 'Could not create the room';
       })
     },
     getRooms () {
