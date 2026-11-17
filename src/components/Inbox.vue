@@ -6,38 +6,13 @@
 			<a @click="close($event)" class="chat-close">x</a>
 
 			<h4>{{user.user.username}}</h4>
-
-			<span ref="counter" class="chat-message-counter">3</span>
-
 		</header>
 
 		<div ref="chat" class="chat">
 
 			<div class="chat-history">
-				<template>
-					<div class="chat-message clearfix">
-
-						<img src="http://lorempixum.com/32/32/people" alt="" width="32" height="32">
-
-						<div class="chat-message-content clearfix">
-
-							<span class="chat-time">13:35</span>
-
-							<h5>John Doe</h5>
-
-							<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Error, explicabo quasi ratione odio dolorum harum.</p>
-
-						</div> <!-- end chat-message-content -->
-
-					</div> <!-- end chat-message -->
-
-					<hr>
-				</template>
 				<slot></slot>
-
-			</div> <!-- end chat-history -->
-
-			<p class="chat-feedback">Your partner is typing…</p>
+			</div>
 
 				<fieldset>
 
@@ -46,9 +21,9 @@
 					<button type="button" @click="addMessage" name="button">Send</button>
 				</fieldset>
 
-		</div> <!-- end chat -->
+		</div>
 
-	</div> <!-- end live-chat -->
+	</div>
 </template>
 
 <script>
@@ -58,20 +33,20 @@ export default {
       open: true,
       heightChecked: false,
       initHeight: 0,
-			message: [],
-			text:""
+      message: [],
+      text: ''
     }
   },
   props: ['user'],
   methods: {
-		addMessage () {
-			this.$parent.$socket.emit('addMessagePrivated', {
-				to: this.user,
-				user: this.$parent.user,
-				text: this.text
-			});
-			this.text = '';
-		},
+    addMessage () {
+      this.$parent.$socket.emit('addMessagePrivated', {
+        to: this.user,
+        user: this.$parent.user,
+        text: this.text
+      });
+      this.text = '';
+    },
     minimize () {
       this.slideToggle(this.$refs.chat);
     },
