@@ -8,20 +8,20 @@
             </a>
           </div>
           <div class="navbar-end">
-            <div @click="menuActive()" class="navbar-item has-dropdown" :class="{'is-active':menu}">
-              <a class="navbar-link">
+            <div class="navbar-item has-dropdown" :class="{'is-active':menu}">
+              <a class="navbar-link" @click.prevent="menuActive()">
                 <p class="image is-32x32" style="margin-right:10px;">
-                  <img style="border-radius: 50%;" height="32" width="32" :src="user.photo">
+                  <img style="border-radius: 50%;" height="32" width="32" :src="photoSrc" @error="useDefault">
                 </p>
                    {{user.username}}
               </a>
 
               <div class="navbar-dropdown is-right">
-                <a class="navbar-item">
+                <a @click="goProfile()" class="navbar-item">
                   Profile
                 </a>
                 <a @click="logout()" class="navbar-item">
-                  Logut
+                  Logout
                 </a>
               </div>
             </div>
@@ -33,17 +33,39 @@
 
 <script>
 import ChatServices from '@/services/ChatServices'
+var defaultAvatar = require('../../defaultAvatar');
 export default {
   name: 'Navbar',
   props: ['user', 'room'],
   data () {
     return {
-      menu: false
+      menu: false,
+      failedPhoto: false
+    }
+  },
+  computed: {
+    photoSrc () {
+      if (this.failedPhoto || !this.user || !this.user.photo) {
+        return defaultAvatar;
+      }
+      return this.user.photo;
+    }
+  },
+  watch: {
+    'user.photo' () {
+      this.failedPhoto = false;
     }
   },
   methods: {
     menuActive() {
       this.menu = !this.menu
+    },
+    useDefault () {
+      this.failedPhoto = true;
+    },
+    goProfile () {
+      this.menu = false;
+      this.$router.push({ name: 'Profile' });
     },
     logout() {
       ChatServices.logout() .then((response) => {
