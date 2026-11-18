@@ -5,6 +5,7 @@ import Room from '@/components/Room'
 import NewRoom from '@/components/NewRoom'
 import Login from '@/components/Login'
 import SignUp from '@/components/SignUp'
+import Profile from '@/components/Profile'
 import ChatServices from '@/services/ChatServices'
 
 function requireSession (to, from, next) {
@@ -49,6 +50,12 @@ export default new Router({
       path: '/notification',
       name: 'Notification',
       component: Notification
+    },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: Profile,
+      beforeEnter: requireSession
     }
 
   ],
