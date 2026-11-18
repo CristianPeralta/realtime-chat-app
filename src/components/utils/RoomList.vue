@@ -49,8 +49,9 @@ export default {
       ChatServices.addRoom({
         name: this.newRoom
       }).then((response) => {
-          this.rooms.push(response.data)
+          this.rememberRoom(response.data);
           this.newRoom = '';
+          this.goRoom(response.data.slug);
       }).catch((err) => {
           var data = err.response && err.response.data;
           this.error = (data && data.error) || 'Could not create the room';
@@ -63,6 +64,17 @@ export default {
     },
     goRoom( room ){
       this.$router.push({name: 'Room', params: {initialRoom: room}});
+    },
+    rememberRoom (room) {
+      if (!room || this.rooms.some((item) => item._id === room._id)) {
+        return;
+      }
+      this.rooms.push(room);
+    }
+  },
+  sockets: {
+    roomAdded (room) {
+      this.rememberRoom(room);
     }
   }
 }

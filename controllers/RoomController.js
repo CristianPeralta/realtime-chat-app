@@ -35,6 +35,9 @@ module.exports.create = function (req,res) {
         console.error(err);
         return res.sendStatus(503);
       }
+      if (global.io) {
+        global.io.emit('roomAdded', saved);
+      }
       return res.json(saved);
     });
   }).catch(function (err) {
