@@ -30,6 +30,7 @@
             </router-link>
             <a href="../">Need Help?</a>
           </p>
+        </div>
       </div>
     </div>
   </section>
