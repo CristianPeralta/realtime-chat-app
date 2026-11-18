@@ -213,9 +213,12 @@ Vue.use(VueSocketio, window.location.origin)
       },
       messageAdded (response) {
         if (response.ok) {
+          var author = response.data && response.data.user;
+          var authorId = author && (author._id || author);
+          var mine = authorId && this.user && String(authorId) === String(this.user._id);
           this.messages.push(response.data);
           this.clear();
-          this.$nextTick(this.chatPosition);
+          this.$nextTick(() => this.chatPosition(mine));
         } else {
           console.log(response.err);
         }
