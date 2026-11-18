@@ -12,12 +12,14 @@
 
 This project is a web application built with Node.js, Express, MongoDB, and Vue.js. The application provides a login system, group chat, direct messages, contacts, and user profile.
 
-## 1. Requirements 
+## 1. Requirements
 
-To run this application, you need to have the following installed on your computer:
+To run without Docker, install:
 
-- Node.js [versión 18.18.2]
-- MongoDB [versión 6.0.4]
+- Node.js 18.18.2
+- MongoDB 6.0.4
+
+To run with Docker, you only need Docker. Compose starts Node 18.18.2 and MongoDB 6.0.4. See section 6.
 
 ## 2. Technologies Used
   - Node.js [18.18.2]
@@ -34,24 +36,39 @@ npm install
 
 ## 4. Configuration
 
-1.  Copy the `.env.example` file as `.env` and configure the necessary environment variables. `SESSION_SECRET` is required. The process exits if it is missing.
-2.  If you want to run tests, also copy the `.env.example` file as `.env.test` and configure the necessary environment variables for testing.
+A host run (`npm start`) needs a `.env` file:
+
+1. Copy `.env.example` to `.env`.
+2. Set `SESSION_SECRET` to a long random string. The process exits if it is missing.
+3. Set `MONGODB_CONNECTION_STRING`. For MongoDB on the host, use `mongodb://localhost/messageDb`.
+
+For tests, copy `.env.example` to `.env.test` and set those same variables for the test database.
+
+Compose does not read this file. It sets the Mongo connection string and generates `SESSION_SECRET` when you do not pass one.
 
 ## 5. Execution
 
-To run the server, execute the following command in the project root:
+Start the server from the project root:
 
 ```bash
 npm run start
 ```
-The server will start on port 3000
 
-And for the client:
+It listens on port 3000.
+
+Rebuild the Vue bundle into `public/js`:
 
 ```bash
 npm run watch
 ```
-The client will start on port 3000
+
+That command does not start a second server.
+
+Run the tests:
+
+```bash
+npm test
+```
 
 
 ## 6. Docker
@@ -72,9 +89,13 @@ docker build -t messages-app .
 To run the Docker container with the Messages app image, use the following command:
 
 ```bash
-docker run -p 3000:3000 --network host messages-app
+docker run -p 3000:3000 --network host \
+  -e SESSION_SECRET=replace-me \
+  -e MONGODB_CONNECTION_STRING=mongodb://localhost/messageDb \
+  messages-app
 ```
-Note: Using the --network host flag allows the container to consume the database from the host machine. If this is not available, consider using Docker Compose as described below.
+
+`--network host` lets the container reach MongoDB on the host. The process exits if `SESSION_SECRET` is missing. Prefer Compose below.
 
 ### 6.4 Running with Docker Compose
 
@@ -86,10 +107,18 @@ docker compose up
 
 That starts MongoDB 6.0.4 and the app image (`node:18.18.2-alpine3.18`). The app listens on port 3000 and connects to Mongo on the compose network. The connection string is set in `docker-compose.yml`; do not edit `.env` for this path. If `SESSION_SECRET` is unset, compose generates one and keeps it in the `session-secret` volume. Database files live in the `mongo-data` volume, so no host directory permissions are required.
 
-Port 3000 must be free on the host. MongoDB is not published to the host.
+Port 3000 must be free on the host. MongoDB is not published to the host. Open the app on the same host you publish, such as `http://127.0.0.1:3000`. `localhost` and `127.0.0.1` are different origins.
 
-## 7. Author
+## 7. Behavior
+
+- Login does not return the password hash. A wrong password or an unknown email returns 401.
+- Creating a message, uploading a file, and deleting messages or rooms requires a session.
+- Socket actions use the logged-in session, not the user id sent by the client.
+- A room message is delivered only to clients in that room.
+- A direct message is delivered to the recipient's session. If that chat is closed or minimized, the window opens again.
+
+## 8. Author
 [Cristian Peralta](https://github.com/CristianPeralta)
 
-## 8. License
+## 9. License
 This project is licensed under the MIT License - see the [LICENSE](https://opensource.org/licenses/MIT) file for details.
