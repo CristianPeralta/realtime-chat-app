@@ -54,7 +54,7 @@ Start the server from the project root:
 npm run start
 ```
 
-It listens on port 3000.
+It listens on `PORT`, or 3000 if that variable is unset. The public deploy sets `PORT=3001`.
 
 Rebuild the Vue bundle into `public/js`:
 
@@ -111,11 +111,15 @@ Port 3000 must be free on the host. MongoDB is not published to the host. Open t
 
 ## 7. Behavior
 
-- Login does not return the password hash. A wrong password or an unknown email returns 401.
-- Creating a message, uploading a file, and deleting messages or rooms requires a session.
+- Login does not return the password hash. A wrong password or an unknown email returns 401 and shows `Email or password is incorrect`. Enter submits the login form.
+- A duplicate username or email on signup returns 409 and shows that the account already exists.
+- Creating a message, uploading a file, and deleting messages or rooms requires a session. A room URL without a session shows Login.
 - Socket actions use the logged-in session, not the user id sent by the client.
-- A room message is delivered only to clients in that room.
-- A direct message is delivered to the recipient's session. If that chat is closed or minimized, the window opens again.
+- A room name is 1 to 40 characters of letters, numbers, and spaces. The URL slug is lowercase, without accents, with spaces as hyphens. An empty or already used slug is rejected.
+- Add opens the new room. Other sessions see it without a reload.
+- A room message is delivered only to clients in that room. Enter sends it. Shift+Enter inserts a newline. The panel scrolls to the latest message, and the cursor stays in the composer.
+- A direct message is delivered to the recipient's session. If that chat is closed or minimized, the window opens again. After a reload, the open chat, its unsent text, and its history come back.
+- A missing profile photo uses `/img/avatar.svg`. Profile shows the signed-in username and email.
 
 ## 8. Author
 [Cristian Peralta](https://github.com/CristianPeralta)
